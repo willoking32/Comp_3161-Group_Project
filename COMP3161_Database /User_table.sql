@@ -119,6 +119,56 @@ FROM
 
 
 
--- SQL queries for API functionality
+-- Ensure no lecturer teaches more than 5 courses and each lecturer teaches at least 1 course
+DELETE FROM OURVLE_CLONE.Courses WHERE CourseID IN (
+    SELECT CourseID
+    FROM (
+        SELECT 
+            LecturerID,
+            COUNT(*) AS CourseCount
+        FROM 
+            Courses
+        GROUP BY 
+            LecturerID
+    ) AS LecturerCourseCount
+    WHERE 
+        CourseCount > 5
+);
+
+-- Ensure each student is enrolled in at least 3 courses and no more than 6 courses
+DELETE FROM Enrollments WHERE StudentID IN (
+    SELECT StudentID
+    FROM (
+        SELECT 
+            StudentID,
+            COUNT(*) AS CourseCount
+        FROM 
+            Enrollments
+        GROUP BY 
+            StudentID
+    ) AS StudentCourseCount
+    WHERE 
+        CourseCount < 3 OR CourseCount > 6
+);
+
+
+-- Ensure each course has at least 10 members
+INSERT INTO Enrollments (StudentID, CourseID)
+SELECT 
+    StudentID,
+    CourseID
+FROM 
+    (
+        SELECT 
+            StudentID,
+            CourseID,
+            ROW_NUMBER() OVER (PARTITION BY CourseID ORDER BY RAND()) AS RowNum
+        FROM 
+            Enrollments
+    ) AS Subquery
+WHERE 
+    RowNum <= 10;
+
+
+
 -- CRUD operations for Users, Courses, Enrollments, CalendarEvents, Forums, DiscussionThreads, CourseContent, Assignments
--- Additional queries for retrieval based on specific conditions
