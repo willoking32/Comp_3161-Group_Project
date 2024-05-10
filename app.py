@@ -483,7 +483,17 @@ def get_student_final_grade(student_id):
 
     
 
-
+def retrieve_report_data(view_name):
+    try:
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor(dictionary=True)  # Use dictionary cursor to directly fetch row headers with data
+        cursor.execute(f"SELECT * FROM {view_name}")
+        results = cursor.fetchall()
+        cursor.close()
+        cnx.close()
+        return jsonify(results)  # Use jsonify to convert the list of dictionaries to a JSON response
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
 
 
 
@@ -491,32 +501,37 @@ def get_student_final_grade(student_id):
 
 @app.route('/report/courses_with_50_students', methods=['GET'])
 def get_courses_with_50_students():
-    return retrieve_report_data('courses_with_50_students')
+    return retrieve_report_data('CoursesWithFiftyOrMoreStudents')
 
 @app.route('/report/students_with_5_courses', methods=['GET'])
 def get_students_with_5_courses():
-    return retrieve_report_data('students_with_5_courses')
+    return retrieve_report_data('StudentsWithFiveOrMoreCourses')
 
 @app.route('/report/lecturers_with_3_courses', methods=['GET'])
 def get_lecturers_with_3_courses():
-    return retrieve_report_data('lecturers_with_3_courses')
+    return retrieve_report_data('LecturersWithThreeOrMoreCourses')
 
 @app.route('/report/top_10_enrolled_courses', methods=['GET'])
 def get_top_10_enrolled_courses():
-    return retrieve_report_data('top_10_enrolled_courses')
+    return retrieve_report_data('TopTenEnrolledCourses')
 
 @app.route('/report/top_10_students_by_average', methods=['GET'])
 def get_top_10_students_by_average():
-    return retrieve_report_data('top_10_students_by_average')
+    return retrieve_report_data('TopTenStudentsHighestAverages')
 
 def retrieve_report_data(view_name):
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute(f"SELECT * FROM {view_name}")
-    results = [{'id': row[0], 'value': row[1]} for row in cursor.fetchall()]
-    cursor.close()
-    cnx.close()
-    return jsonify(results)
+    try:
+      
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute(f"SELECT * FROM {view_name}")
+        results = [{'id': row[0], 'value': row[1]} for row in cursor.fetchall()]
+        cursor.close()
+        cnx.close()
+        return jsonify(results)
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
+    
 
 
 

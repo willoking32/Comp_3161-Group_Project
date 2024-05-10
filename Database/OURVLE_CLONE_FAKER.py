@@ -34,7 +34,7 @@ def generate_lecturers(num_lecturers):
     lecturers = []
     for i in range(num_lecturers):
         lecturer = {
-            'LecturerID': i + 100002,
+            'UserID': i + 100001,
             'FirstName': fake.first_name(),
             'LastName': fake.last_name(),
             'Password': fake.password(),
@@ -46,7 +46,8 @@ def generate_lecturers(num_lecturers):
 def generate_users(num_users, num_lecturers):
     try:
         users = []
-        students = generate_students(num_users - num_lecturers)
+        
+        students = generate_students(num_users)
         lecturers = generate_lecturers(num_lecturers)
 
 
@@ -67,15 +68,46 @@ def generate_courses(num_courses, num_lecturers):
         courses.append(course)
     return courses
 
+# def generate_enrollments(num_enrollments, num_students, num_courses):
+#     enrollments = []
+#     student_ids = list(range(1, num_students + 1))
+#     random.shuffle(student_ids)
+#     for i in range(num_students):
+#         enrollment = {
+#             'EnrollmentID': i + 1,
+#             'StudentID': student_ids[i % num_students],  # Ensure each student has at least 3 enrollments
+#             'CourseID': random.randint(1, num_courses)
+#         }
+#         enrollments.append(enrollment)
+#     return enrollments
+
 def generate_enrollments(num_enrollments, num_students, num_courses):
     enrollments = []
-    for i in range(num_enrollments):
+
+    for i in range(num_students):
         enrollment = {
             'EnrollmentID': i + 1,
-            'StudentID': random.randint(1, num_students),
+            'StudentID': i + 1,
             'CourseID': random.randint(1, num_courses)
         }
         enrollments.append(enrollment)
+
+    for i in range(num_students):
+        enrollment = {
+            'EnrollmentID': i + 100001,
+            'StudentID': i + 1,
+            'CourseID': random.randint(1, num_courses)
+        }
+        enrollments.append(enrollment)
+
+    for i in range(num_students):
+        enrollment = {
+            'EnrollmentID': i + 200001,
+            'StudentID': i + 1,
+            'CourseID': random.randint(1, num_courses)
+        }
+        enrollments.append(enrollment)
+
     return enrollments
 
 def generate_calendar_events(num_events, num_courses):
@@ -145,13 +177,13 @@ def generate_assignments(num_assignments, num_courses, num_students):
 num_users = 100000
 num_courses = 200
 num_lecturers = 50
-num_students = 100050
+num_students = 100000
 num_events = 500
 num_forums = 100
 num_threads = 1000
 num_content = 500
 num_assignments = 1000
-num_enrollments = 50000
+num_enrollments = 2000
 
 users = generate_users(num_users, num_lecturers)
 courses = generate_courses(num_courses, num_lecturers)
@@ -163,9 +195,13 @@ course_content = generate_course_content(num_content, num_courses, num_lecturers
 assignments = generate_assignments(num_assignments, num_courses, num_students)
 
 for user in users:
-    query = "INSERT INTO Users (UserID, FirstName, LastName, Password, UserType) VALUES (%s, %s, %s, %s, %s)"
-    values = (user['UserID'], user['FirstName'], user['LastName'], user['Password'], user['UserType'])
-    execute_query(query, values)
+    try:
+        query = "INSERT INTO Users (UserID, FirstName, LastName, Password, UserType) VALUES (%s, %s, %s, %s, %s)"
+        values = (user['UserID'], user['FirstName'], user['LastName'], user['Password'], user['UserType'])
+        execute_query(query, values)
+    except Exception as e:
+        print(e)
+    
 
 for course in courses:
     query = "INSERT INTO Courses (CourseID, CourseName, LecturerID) VALUES (%s, %s, %s)"

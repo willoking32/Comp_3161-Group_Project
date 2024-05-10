@@ -78,3 +78,50 @@ CREATE TABLE OURVLE_CLONE.Assignments (
     FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
     FOREIGN KEY (StudentID) REFERENCES Users(UserID)
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+USE OURVLE_CLONE;
+
+CREATE VIEW OURVLE_CLONE.CoursesWithFiftyOrMoreStudents AS
+SELECT CourseID, COUNT(*) AS StudentsCount
+FROM Enrollments
+GROUP BY CourseID
+HAVING COUNT(*) >= 50;
+
+CREATE VIEW OURVLE_CLONE.StudentsWithFiveOrMoreCourses AS
+SELECT StudentID, COUNT(*) AS EnrolledCoursesCount
+FROM Enrollments
+GROUP BY StudentID
+HAVING COUNT(*) >= 5;
+
+CREATE VIEW OURVLE_CLONE.LecturersWithThreeOrMoreCourses AS
+SELECT LecturerID, COUNT(*) AS TaughtCoursesCount
+FROM Courses
+GROUP BY LecturerID
+HAVING COUNT(*) >= 3;
+
+CREATE VIEW OURVLE_CLONE.TopTenEnrolledCourses AS
+SELECT CourseID, COUNT(*) AS EnrollmentsCount
+FROM Enrollments
+GROUP BY CourseID
+ORDER BY COUNT(*) DESC
+LIMIT 10;
+
+CREATE VIEW OURVLE_CLONE.TopTenStudentsHighestAverages AS
+SELECT StudentID, AVG(Grade) AS OverallAverage
+FROM Assignments
+GROUP BY StudentID
+ORDER BY AVG(Grade) DESC
+LIMIT 10;
