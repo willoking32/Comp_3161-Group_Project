@@ -1,0 +1,17 @@
+{% include "header.html" %}
+{% block main %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register for Course</title>
+</head>
+<body>
+    <h1>Register for Course</h1>
+    <form action="/courses/register" method="POST">
+        <label for="courseId">Course ID:</label><br>
+        <input type="text" id="courseId" name="courseId"><br>
+        <input type="submit" value="Register">
+    </form>
+</body>
+{% endblock %}

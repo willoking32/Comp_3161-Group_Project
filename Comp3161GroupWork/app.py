@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, session
+import hashlib
+from flask import Flask, render_template, request, redirect, session,jsonify
 
 import mysql.connector
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-Cur_User = [-1, ""]  # Initialize Cur_User as a global variable
+Cur_User = [9, "Admin"]  # Initialize Cur_User as a global variable
 
 def connect_to_mysql():
     return mysql.connector.connect(
@@ -30,7 +31,6 @@ def create_users_table():
 def create_courses_table():
     conn = connect_to_mysql()
     cursor = conn.cursor()
-    
     cursor.execute('''CREATE TABLE IF NOT EXISTS courses (
                     coursecode VARCHAR(21) PRIMARY KEY ,
                     name VARCHAR(100) NOT NULL,
@@ -42,18 +42,19 @@ def create_courses_table():
 def courseEnrollmentTable():
     conn = connect_to_mysql()
     cursor = conn.cursor()
-    
-    cursor.execute('''CREATE TABLE IF NOT EXISTS courses_enrolment (
+    cursor.execute("""DROP TABLE IF EXISTS `course_enrolment`;""")
+    cursor.execute('''CREATE TABLE IF NOT EXISTS course_enrolment (
+                    course_title VARCHAR(100) NOT NULL,
                     coursecode VARCHAR(21) PRIMARY KEY ,
-                    name VARCHAR(100) NOT NULL,
-                    lecturer_id INTEGER NOT NULL,
-                    FOREIGN KEY (lecturer_id) REFERENCES users(id));''')
+                    id INTEGER NOT NULL,
+                    FOREIGN KEY (coursecode) REFERENCES users(id));''')
     conn.commit()
     conn.close()
 
 # Endpoint for user registration
 @app.route('/register', methods=['GET', 'POST'])
 def register_user():
+    global Cur_User
     if request.method == 'POST':
         sid = request.form.get('id')
         firstname = request.form.get('firstname')
@@ -63,7 +64,7 @@ def register_user():
         stype = request.form.get('type')
 
         if not sid or not password or not firstname or not lastname or not gender or not stype:
-            return render_template('register.html', error='ID, first name, last name, password, gender and type are required')
+            return render_template('register.html', error='ID, first name, last name, password, gender and type are required', Cur_User=Cur_User)
 
         # Check if id already exists
         conn = connect_to_mysql()
@@ -71,15 +72,15 @@ def register_user():
         cursor.execute("SELECT * FROM users WHERE id = %s", (sid,))
         if cursor.fetchone():
             conn.close()
-            return render_template('register.html', error='ID already exists')
+            return render_template('register.html', error='ID already exists', Cur_User=Cur_User)
 
-        cursor.execute("INSERT INTO users (id, firstname, lastname, password, gender,type) VALUES (%s, %s, %s, %s, %s,%s)", (sid, firstname, lastname, password, gender,stype))
+        cursor.execute("INSERT INTO users (id, firstname, lastname, password, gender, type) VALUES (%s, %s, %s, %s, %s, %s)", (sid, firstname, lastname, password, gender, stype))
         conn.commit()
         conn.close()
 
-        return render_template('register.html', message='User registered successfully')
+        return render_template('register_user.html', message='User registered successfully', Cur_User=Cur_User)
     else:
-        return render_template('register.html')
+        return render_template('register_user.html', Cur_User=Cur_User)
 
 @app.route('/')
 def header():
@@ -98,21 +99,20 @@ def login():
         conn = connect_to_mysql()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id,type FROM users WHERE id = %s AND password = %s", (user_id, password))
+        cursor.execute("SELECT id, type, password FROM users WHERE id = %s", (user_id,))
         user = cursor.fetchone()
 
         conn.close()
-        if user:
+        if user and user[2] == password:
             session['user_id'] = user[0]
             session['type'] = user[1]
             Cur_User = [user_id, user[1]]  # Update Cur_User
-            return render_template('create_course.html')    
+            return redirect('/courses')    
         else:
             return render_template('login.html', error='Invalid ID or password')
     else:
-        return render_template('login.html')
+        return render_template('login.html', Cur_User=Cur_User)
 
-# Endpoint for user logout
 @app.route('/logout')
 def logout():
     global Cur_User
@@ -124,7 +124,7 @@ def logout():
 def create_course():
     global Cur_User
     if request.method == 'POST':
-        if Cur_User[1] == 'Admin':
+        if Cur_User and Cur_User[1] == 'Admin':
             course_name = request.form.get('course_name')
             coursecode = request.form.get('course_ID')
             lecturer_id = request.form.get('assigned_lecturer_id')
@@ -142,7 +142,7 @@ def create_course():
             return redirect('/courses')  # Redirect to courses page after course creation
         else:
             return render_template('create_course.html', error='Not Authorized')
-    return render_template('create_course.html')
+    return render_template('create_course.html', Cur_User=Cur_User)
 
 @app.route('/courses')
 def all_courses():
@@ -159,7 +159,7 @@ def student_courses(student_id):
     global Cur_User
     conn = connect_to_mysql()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT courses.* FROM courses INNER JOIN course_enrollment ON courses.id = course_enrollment.course_id WHERE course_enrollment.student_id = %s", (student_id,))
+    cursor.execute("SELECT courses.* FROM courses INNER JOIN course_enrolment ON courses.coursecode = course_enrolment.coursecode WHERE course_enrolment.id = %s", (student_id,))
     courses = cursor.fetchall()
     conn.close()
     return render_template('courses.html', courses=courses, Cur_User=Cur_User)
@@ -173,6 +173,52 @@ def lecturer_courses(lecturer_id):
     courses = cursor.fetchall()
     conn.close()
     return render_template('courses.html', courses=courses, Cur_User=Cur_User)
+
+@app.route('/courses/register', methods=['GET','POST'])
+def register_course():
+    global Cur_User
+    
+    # Check if user is logged in
+    if 'user_id' not in session:
+        return render_template('error.html', error='Unauthorized'), 401
+
+    # Check if user is a student
+    if session.get('type') != 'Student':
+        return render_template('error.html', error='Only students can register for courses'), 403
+
+    # Get courseId from request body
+    course_id = request.form.get('courseId')
+
+    # Check if courseId is provided
+    if not course_id:
+        return render_template('error.html', error='Course ID is required'), 400
+
+    # Check if the course exists
+    conn = connect_to_mysql()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM courses WHERE coursecode = %s", (course_id,))
+    course = cursor.fetchone()
+    conn.close()
+
+    if not course:
+        return render_template('error.html', error='Course not found'), 404
+
+    # Register student for the course
+    student_id = session['user_id']
+    conn = connect_to_mysql()
+    cursor = conn.cursor()
+
+    # Check if the student is already registered for the course
+    cursor.execute("SELECT * FROM course_enrollment WHERE student_id = %s AND coursecode = %s", (student_id, course_id))
+    if cursor.fetchone():
+        conn.close()
+        return render_template('error.html', error='Student is already registered for this course'), 400
+
+    cursor.execute("INSERT INTO course_enrollment (student_id, coursecode) VALUES (%s, %s)", (student_id, course_id))
+    conn.commit()
+    conn.close()
+
+    return render_template('success.html', message='Student registered successfully')
 
 if __name__ == '__main__':
     create_users_table()
