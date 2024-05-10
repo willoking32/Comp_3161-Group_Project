@@ -16,22 +16,45 @@ def execute_query(query, values=None):
     connection.commit()
     cursor.close()
 
-def generate_users(num_users, num_lecturers):
-    users = []
-    lecturer_ids = random.sample(range(1, num_users + 1), num_lecturers)
-    for i in range(num_users):
-        user_type = 'student'
-        if i + 1 in lecturer_ids:
-            user_type = 'lecturer'
-        user = {
+
+def generate_students(num_students):
+    students = []
+    for i in range(num_students):
+        student = {
             'UserID': i + 1,
             'FirstName': fake.first_name(),
             'LastName': fake.last_name(),
             'Password': fake.password(),
-            'UserType': user_type
+            'UserType': 'student'
         }
-        users.append(user)
-    return users
+        students.append(student)
+    return students
+
+def generate_lecturers(num_lecturers):
+    lecturers = []
+    for i in range(num_lecturers):
+        lecturer = {
+            'LecturerID': i + 100002,
+            'FirstName': fake.first_name(),
+            'LastName': fake.last_name(),
+            'Password': fake.password(),
+            'UserType': 'lecturer'
+        }
+        lecturers.append(lecturer)
+    return lecturers
+
+def generate_users(num_users, num_lecturers):
+    try:
+        users = []
+        students = generate_students(num_users - num_lecturers)
+        lecturers = generate_lecturers(num_lecturers)
+
+
+        users = students + lecturers
+
+        return users
+    except Exception as e:
+        print(e)
 
 def generate_courses(num_courses, num_lecturers):
     courses = []
@@ -122,7 +145,7 @@ def generate_assignments(num_assignments, num_courses, num_students):
 num_users = 100000
 num_courses = 200
 num_lecturers = 50
-num_students = 100000
+num_students = 100050
 num_events = 500
 num_forums = 100
 num_threads = 1000
