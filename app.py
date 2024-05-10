@@ -521,17 +521,29 @@ def get_top_10_students_by_average():
 
 def retrieve_report_data(view_name):
     try:
-      
+        # Connect to the database
         cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
         cursor = cnx.cursor()
+
+        # Execute the query
         cursor.execute(f"SELECT * FROM {view_name}")
-        results = [{'id': row[0], 'value': row[1]} for row in cursor.fetchall()]
+        column_names = [column[0] for column in cursor.description]  # This will fetch the column headers
+
+        # Fetch results and convert to a list of dictionaries
+        results = [dict(zip(column_names, row)) for row in cursor.fetchall()]
+
+        # Close cursor and connection
         cursor.close()
         cnx.close()
+
+        # Return JSON response
         return jsonify(results)
+    except mysql.connector.Error as err:
+        # Handle specific database errors
+        return make_response({'error': f"Database error: {str(err)}"}, 400)
     except Exception as e:
-        return make_response({'error': str(e)}, 400)
-    
+        # Handle other exceptions
+        return make_response({'error': f"An error occurred: {str(e)}"}, 400)
 
 
 

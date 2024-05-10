@@ -10,5 +10,5 @@ DELETE FROM OURVLE_CLONE.Courses WHERE CourseID IN (
             LecturerID
     ) AS LecturerCourseCount
     WHERE 
-        CourseCount > 5
+        CourseCount > 6
 );
