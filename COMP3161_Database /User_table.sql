@@ -171,4 +171,3 @@ WHERE
 
 
 
--- CRUD operations for Users, Courses, Enrollments, CalendarEvents, Forums, DiscussionThreads, CourseContent, Assignments
