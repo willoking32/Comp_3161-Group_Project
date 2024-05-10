@@ -5,10 +5,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courses</title>
+    <title>Events</title>
 </head>
 <body>
-    <h1>Courses</h1>
+    <h1>Events</h1>
     <ul>
         {% for event in events%}
             <li>{{ event.coursecode }} {{ event.start_date }} {{ event.end_date }}</li>

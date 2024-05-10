@@ -288,7 +288,7 @@ def create_event():
         # Insert event into the database
         conn = connect_to_mysql()
         cursor = conn.cursor()
-        cursor.execute('DROP TABLE IF EXISTS `calendar_events`;')
+        
         cursor.execute("""CREATE TABLE IF NOT EXISTS calendar_events (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -299,7 +299,7 @@ def create_event():
     FOREIGN KEY (coursecode) REFERENCES courses(id)
 );""")
         try:
-            cursor.execute("INSERT INTO calendar_events (title, description, start_date, end_date, course_id) VALUES (%s, %s, %s, %s, %s)",
+            cursor.execute("INSERT INTO calendar_events (title, description, start_date, end_date, coursecode) VALUES (%s, %s, %s, %s, %s)",
                         (title, description, start_date, end_date, course_id))
             conn.commit()
         except Exception as e:
@@ -316,14 +316,34 @@ def create_event():
 def get_events():
     global Cur_User
     if request.method == 'POST':
-        coursecode = request.form.get('course_id')
+        coursecode = request.form.get('course_ID')
         conn = connect_to_mysql()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM calendar_events WHERE course_id = %s;', (coursecode,))
+        cursor.execute('SELECT * FROM calendar_events WHERE coursecode = %s;', (coursecode,))
         events = cursor.fetchall()
         conn.close()
         return render_template('events.html', events=events, Cur_User=Cur_User)
     return render_template('getevent.html', Cur_User=Cur_User)
+
+
+@app.route('/addcoursecontent', methods=['POST'])
+def addcourse():
+    try:
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        content = request.form.get()
+        contentid = request.form.get()['ContentID']
+        cid = request.form.get('Courseid')
+        ctype = request.form.get('ContentType')
+        lid = request.form.get('LecturerID')
+        contentdesc = request.form.get('ContentDescription')
+        secname = request.form.get('SectionName')
+        cursor.execute(f"INSERT INTO CourseContent (ContentID, CourseID, LecturerID, ContentType, ContentDescription, SectionName) VALUES('{contentid}','{cid}','{lid}','{ctype}','{contentdesc}','{secname}');")
+        cnx.commit()
+        cursor.close()
+        cnx.close()
+    except Exception as e:
+        print (e)
 
 if __name__ == '__main__':
     create_users_table()
