@@ -4,12 +4,8 @@ import mysql.connector
 
 fake = Faker()
 
-connection = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="DoveLove",
-    database="OURVLE_CLONE"
-)
+connection = mysql.connector.connect(user='root', password="islandwater", host="localhost" , database="OURVLE_CLONE")
+
 
 def execute_query(query, values=None):
     cursor = connection.cursor()
@@ -20,18 +16,46 @@ def execute_query(query, values=None):
     connection.commit()
     cursor.close()
 
-def generate_users(num_users):
-    users = []
-    for i in range(num_users):
-        user = {
+
+def generate_students(num_students):
+    students = []
+    for i in range(num_students):
+        student = {
             'UserID': i + 1,
             'FirstName': fake.first_name(),
             'LastName': fake.last_name(),
             'Password': fake.password(),
-            'UserType': random.choice(['admin', 'lecturer', 'student'])
+            'UserType': 'student'
         }
-        users.append(user)
-    return users
+        students.append(student)
+    return students
+
+def generate_lecturers(num_lecturers):
+    lecturers = []
+    for i in range(num_lecturers):
+        lecturer = {
+            'UserID': i + 100001,
+            'FirstName': fake.first_name(),
+            'LastName': fake.last_name(),
+            'Password': fake.password(),
+            'UserType': 'lecturer'
+        }
+        lecturers.append(lecturer)
+    return lecturers
+
+def generate_users(num_users, num_lecturers):
+    try:
+        users = []
+        
+        students = generate_students(num_users)
+        lecturers = generate_lecturers(num_lecturers)
+
+        users.extend(students)
+        users.extend(lecturers)
+
+        return users
+    except Exception as e:
+        print(e)
 
 def generate_courses(num_courses, num_lecturers):
     courses = []
@@ -44,15 +68,46 @@ def generate_courses(num_courses, num_lecturers):
         courses.append(course)
     return courses
 
+# def generate_enrollments(num_enrollments, num_students, num_courses):
+#     enrollments = []
+#     student_ids = list(range(1, num_students + 1))
+#     random.shuffle(student_ids)
+#     for i in range(num_students):
+#         enrollment = {
+#             'EnrollmentID': i + 1,
+#             'StudentID': student_ids[i % num_students],  # Ensure each student has at least 3 enrollments
+#             'CourseID': random.randint(1, num_courses)
+#         }
+#         enrollments.append(enrollment)
+#     return enrollments
+
 def generate_enrollments(num_enrollments, num_students, num_courses):
     enrollments = []
-    for i in range(num_enrollments):
+
+    for i in range(num_students):
         enrollment = {
             'EnrollmentID': i + 1,
-            'StudentID': random.randint(1, num_students),
+            'StudentID': i + 1,
             'CourseID': random.randint(1, num_courses)
         }
         enrollments.append(enrollment)
+
+    for i in range(num_students):
+        enrollment = {
+            'EnrollmentID': i + 100001,
+            'StudentID': i + 1,
+            'CourseID': random.randint(1, num_courses)
+        }
+        enrollments.append(enrollment)
+
+    for i in range(num_students):
+        enrollment = {
+            'EnrollmentID': i + 200001,
+            'StudentID': i + 1,
+            'CourseID': random.randint(1, num_courses)
+        }
+        enrollments.append(enrollment)
+
     return enrollments
 
 def generate_calendar_events(num_events, num_courses):
@@ -87,7 +142,7 @@ def generate_threads(num_threads, num_forums, num_users):
             'UserID': random.randint(1, num_users),
             'ThreadTitle': fake.sentence(),
             'ThreadPost': fake.text(),
-            'ParentThreadID': None  # Assuming no parent thread for initial threads
+            'ParentThreadID': None  
         }
         threads.append(thread)
     return threads
@@ -128,9 +183,9 @@ num_forums = 100
 num_threads = 1000
 num_content = 500
 num_assignments = 1000
-num_enrollments = 50000
+num_enrollments = 2000
 
-users = generate_users(num_users)
+users = generate_users(num_users, num_lecturers)
 courses = generate_courses(num_courses, num_lecturers)
 enrollments = generate_enrollments(num_enrollments, num_students, num_courses)
 calendar_events = generate_calendar_events(num_events, num_courses)
@@ -140,9 +195,13 @@ course_content = generate_course_content(num_content, num_courses, num_lecturers
 assignments = generate_assignments(num_assignments, num_courses, num_students)
 
 for user in users:
-    query = "INSERT INTO Users (UserID, FirstName, LastName, Password, UserType) VALUES (%s, %s, %s, %s, %s)"
-    values = (user['UserID'], user['FirstName'], user['LastName'], user['Password'], user['UserType'])
-    execute_query(query, values)
+    try:
+        query = "INSERT INTO Users (UserID, FirstName, LastName, Password, UserType) VALUES (%s, %s, %s, %s, %s)"
+        values = (user['UserID'], user['FirstName'], user['LastName'], user['Password'], user['UserType'])
+        execute_query(query, values)
+    except Exception as e:
+        print(e)
+    
 
 for course in courses:
     query = "INSERT INTO Courses (CourseID, CourseName, LecturerID) VALUES (%s, %s, %s)"
@@ -171,8 +230,8 @@ for thread in discussion_threads:
 
 for content_item in course_content:
     query = "INSERT INTO CourseContent (ContentID, CourseID, LecturerID, ContentType, ContentDescription, SectionName) VALUES (%s, %s, %s, %s, %s, %s)"
-    values = (content_item['ContentID'], content_item['CourseID'], content_item['LecturerID'], content_item['ContentType'], content_item['ContentDescription'], content_item['ContentDescription'], content_item['SectionName'])
-    execute_query(query, values)
+    values = (content_item['ContentID'], content_item['CourseID'], content_item['LecturerID'], content_item['ContentType'], content_item['ContentDescription'], content_item['SectionName'])
+    execute_query(query, values) 
     
 
 for assignment in assignments:
