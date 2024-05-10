@@ -1,0 +1,49 @@
+{% include "header.html" %}
+{% block main %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+</head>
+<body>
+    <h1>User Registration</h1>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% elif message %}
+        <p style="color: green;">{{ message }}</p>
+    {% endif %}
+    <form method="POST">
+        <label for="id">ID:</label><br>
+        <input type="text" id="id" name="id"><br><br>
+        
+        <label for="firstname">First Name:</label><br>
+        <input type="text" id="firstname" name="firstname"><br><br>
+        
+        <label for="lastname">Last Name:</label><br>
+        <input type="text" id="lastname" name="lastname"><br><br>
+        
+        <label for="password">Password:</label><br>
+        <input type="password" id="password" name="password"><br><br>
+        
+        <label>Gender:</label><br>
+        <input type="radio" id="gender_male" name="gender" value="male">
+        <label for="gender_male">Male</label>
+        <input type="radio" id="gender_female" name="gender" value="female">
+        <label for="gender_female">Female</label><br><br>
+
+
+        <label>Type:</label><br>
+        <input type="radio" id="user_admin" name="type" value="Admin">
+        <label for="user_admin">Admin</label>
+        <input type="radio" id="user_student" name="type" value="Lecturer">
+        <label for="user_lecturer">Lecturer</label><br><br>
+        <input type="radio" id="user_lecturer" name="type" value="Student">
+        <label for="user_lecturer">Student</label><br><br>
+
+        <input type="submit" value="Register">
+    </form>
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% include "header.html" %}
+{% block main %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Course</title>
+</head>
+<body>
+    <h1>Enter Course Code</h1>
+    <form method="POST" action="/course/members">
+        
+        <label for="course_name">Course Code:</label><br>
+        <input type="text" id="course_ID" name="course_ID"><br><br>
+        
+        
+        <input type="submit" value="OK">
+    </form>
+</body>
+</html>
+{% endblock %}
