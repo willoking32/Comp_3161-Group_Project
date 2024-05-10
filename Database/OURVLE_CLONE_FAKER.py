@@ -16,15 +16,20 @@ def execute_query(query, values=None):
     connection.commit()
     cursor.close()
 
-def generate_users(num_users, num_lecturers):
+def generate_users(num_students, num_lecturers):
     users = []
-    lecturer_ids = random.sample(range(1, num_users + 1), num_lecturers)
-    for i in range(num_users):
+    lecturer_ids = random.sample(range(1, num_students + num_lecturers + 1), num_lecturers)
+    student_ids = [i for i in range(1, num_students + 1)]
+    for i in range(num_students + num_lecturers):
         user_type = 'student'
         if i + 1 in lecturer_ids:
             user_type = 'lecturer'
+        if i + 1 <= num_students:
+            user_id = student_ids.pop(0)
+        else:
+            user_id = i + 1 - num_students
         user = {
-            'UserID': i + 1,
+            'UserID': user_id,
             'FirstName': fake.first_name(),
             'LastName': fake.last_name(),
             'Password': fake.password(),
@@ -33,26 +38,32 @@ def generate_users(num_users, num_lecturers):
         users.append(user)
     return users
 
+
 def generate_courses(num_courses, num_lecturers):
     courses = []
+    lecturer_ids = list(range(1, num_lecturers + 1))
     for i in range(num_courses):
-        course = {
+        lecturer_id = random.choice(lecturer_ids)
+        courses.append({
             'CourseID': i + 1,
             'CourseName': fake.catch_phrase(),
-            'LecturerID': random.randint(1, num_lecturers)
-        }
-        courses.append(course)
+            'LecturerID': lecturer_id
+        })
+        if len(courses) % 10 == 0:
+            lecturer_ids.remove(lecturer_id)
     return courses
 
-def generate_enrollments(num_enrollments, num_students, num_courses):
+
+def generate_enrollments(num_students, num_courses):
     enrollments = []
-    for i in range(num_enrollments):
-        enrollment = {
-            'EnrollmentID': i + 1,
-            'StudentID': random.randint(1, num_students),
-            'CourseID': random.randint(1, num_courses)
-        }
-        enrollments.append(enrollment)
+    for student_id in range(1, num_students + 1):
+        num_courses_per_student = random.randint(3, 6)
+        student_courses = random.sample(range(1, num_courses + 1), num_courses_per_student)
+        for course_id in student_courses:
+            enrollments.append({
+                'StudentID': student_id,
+                'CourseID': course_id
+            })
     return enrollments
 
 def generate_calendar_events(num_events, num_courses):
@@ -130,9 +141,9 @@ num_content = 500
 num_assignments = 1000
 num_enrollments = 50000
 
-users = generate_users(num_users, num_lecturers)
+users = generate_users(num_students, num_lecturers)
 courses = generate_courses(num_courses, num_lecturers)
-enrollments = generate_enrollments(num_enrollments, num_students, num_courses)
+enrollments = generate_enrollments(num_students, num_courses,num_lecturers)
 calendar_events = generate_calendar_events(num_events, num_courses)
 forums = generate_forums(num_forums, num_courses)
 discussion_threads = generate_threads(num_threads, num_forums, num_users)
@@ -150,9 +161,10 @@ for course in courses:
     execute_query(query, values)
 
 for enrollment in enrollments:
-    query = "INSERT INTO Enrollments (EnrollmentID, StudentID, CourseID) VALUES (%s, %s, %s)"
-    values = (enrollment['EnrollmentID'], enrollment['StudentID'], enrollment['CourseID'])
+    query = "INSERT INTO Enrollments (StudentID, CourseID) VALUES (%s, %s)"
+    values = (enrollment['StudentID'], enrollment['CourseID'])
     execute_query(query, values)
+
 
 for event in calendar_events:
     query = "INSERT INTO CalendarEvents (EventID, CourseID, EventDate, EventDescription) VALUES (%s, %s, %s, %s)"
@@ -171,7 +183,7 @@ for thread in discussion_threads:
 
 for content_item in course_content:
     query = "INSERT INTO CourseContent (ContentID, CourseID, LecturerID, ContentType, ContentDescription, SectionName) VALUES (%s, %s, %s, %s, %s, %s)"
-    values = (content_item['ContentID'], content_item['CourseID'], content_item['LecturerID'], content_item['ContentType'], content_item['ContentDescription'], content_item['ContentDescription'], content_item['SectionName'])
+    values = (content_item['ContentID'], content_item['CourseID'], content_item['LecturerID'], content_item['ContentType'], content_item['ContentDescription'], content_item['SectionName'])
     execute_query(query, values) 
     
 
