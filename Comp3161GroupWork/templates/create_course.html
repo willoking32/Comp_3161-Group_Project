@@ -1,0 +1,24 @@
+{% include "header.html" %}
+{% block main %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Course</title>
+</head>
+<body>
+    <h1>Create Course</h1>
+    <form method="POST" action="/create_course">
+        <label for="course_name">Course Name:</label><br>
+        <input type="text" id="course_name" name="course_name"><br><br>
+        <label for="course_name">Course Code:</label><br>
+        <input type="text" id="course_ID" name="course_ID"><br><br>
+        <label for="course_name">Assigned Lecturer:</label><br>
+        <input type="text" id="assigned_lecturer_id" name="assigned_lecturer_id"><br><br>
+        
+        <input type="submit" value="Create Course">
+    </form>
+</body>
+</html>
+{% endblock %}
