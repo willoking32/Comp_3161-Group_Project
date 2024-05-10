@@ -1,53 +1,43 @@
--- View to select all students
-CREATE VIEW AllStudents AS
-SELECT *
-FROM Users
-WHERE UserType = 'student';
 
--- View to select all courses
-CREATE VIEW AllCourses AS
-SELECT *
-FROM Courses;
+-- Maximum courses per student
+SELECT MAX(EnrolledCoursesCount) AS MaxCoursesPerStudent
+FROM (
+    SELECT COUNT(*) AS EnrolledCoursesCount
+    FROM Enrollments
+    GROUP BY StudentID
+) AS StudentCourseCount;
 
--- View to select students with their enrolled courses count
-CREATE VIEW StudentCourseCount AS
-SELECT StudentID, COUNT(*) AS EnrolledCoursesCount
-FROM Enrollments
-GROUP BY StudentID;
+-- Minimum courses per student
+SELECT MIN(EnrolledCoursesCount) AS MinCoursesPerStudent
+FROM (
+    SELECT COUNT(*) AS EnrolledCoursesCount
+    FROM Enrollments
+    GROUP BY StudentID
+) AS StudentCourseCount;
 
--- View to select students with less than 6 courses
-CREATE VIEW StudentsWithLessThanSixCourses AS
-SELECT StudentID
-FROM StudentCourseCount
-WHERE EnrolledCoursesCount < 6;
-
--- View to select students with at least 3 courses
-CREATE VIEW StudentsWithAtLeastThreeCourses AS
-SELECT StudentID
-FROM StudentCourseCount
-WHERE EnrolledCoursesCount >= 3;
-
--- View to select courses with at least 10 members
-CREATE VIEW CoursesWithAtLeastTenMembers AS
+-- Course with the least members
 SELECT CourseID, COUNT(*) AS MembersCount
 FROM Enrollments
 GROUP BY CourseID
-HAVING MembersCount >= 10;
+ORDER BY MembersCount ASC
+LIMIT 1;
 
--- View to select lecturers with their taught courses count
-CREATE VIEW LecturerCourseCount AS
+-- Lecturer with maximum courses
 SELECT LecturerID, COUNT(*) AS TaughtCoursesCount
 FROM Courses
-GROUP BY LecturerID;
+GROUP BY LecturerID
+ORDER BY TaughtCoursesCount DESC
+LIMIT 1;
 
--- View to select lecturers with less than 5 courses
-CREATE VIEW LecturersWithLessThanFiveCourses AS
-SELECT LecturerID
-FROM LecturerCourseCount
-WHERE TaughtCoursesCount < 5;
+-- Lecturer with minimum courses
+SELECT LecturerID, COUNT(*) AS TaughtCoursesCount
+FROM Courses
+GROUP BY LecturerID
+ORDER BY TaughtCoursesCount ASC
+LIMIT 1;
 
--- View to select lecturers with at least 1 course
-CREATE VIEW LecturersWithAtLeastOneCourse AS
-SELECT LecturerID
-FROM LecturerCourseCount
-WHERE TaughtCoursesCount >= 1;
+SELECT CourseID, COUNT(*) AS MembersCount
+FROM Enrollments
+GROUP BY CourseID
+ORDER BY MembersCount DESC
+LIMIT 1;
