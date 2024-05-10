@@ -192,9 +192,16 @@ def get_calendar_events(course_id):
     try:
         cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
         cursor = cnx.cursor()
-        cursor.execute("SELECT title, event_date FROM calendar_events WHERE course_id = %s", (course_id,))
-        events = cursor.fetchall()
-        event_list = [{'title': event[0], 'date': event[1]} for event in events]
+
+        cursor.execute("SELECT CourseID, EventDate, EventDescription FROM CalendarEvents WHERE CourseID = %s", (course_id,))
+        event_list = []
+        result = cursor.fetchall()
+        for CourseID, EventDate, EventDescription in result:
+            events = {}
+            events['course_id'] = CourseID
+            events['event_date'] = EventDate
+            events['event_description'] = EventDescription
+            event_list.append(events)
         cursor.close()
         cnx.close()
         return jsonify(event_list)
@@ -202,24 +209,24 @@ def get_calendar_events(course_id):
         return make_response({'error': str(e)}, 400)
     
 
-@app.route('/calendar_events/course/<course_id>', methods=['GET'])
-def get_calendar_events_for_course(course_id):
-    try:
-        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-        cursor = cnx.cursor()
+# @app.route('/calendar_events/course/<course_id>', methods=['GET'])
+# def get_calendar_events_for_course(course_id):
+#     try:
+#         cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+#         cursor = cnx.cursor()
 
-        # SQL to retrieve all events for a particular course
-        cursor.execute("SELECT event_id, title, event_date FROM calendar_events WHERE course_id = %s", (course_id,))
-        events = cursor.fetchall()
+#         # SQL to retrieve all events for a particular course
+#         cursor.execute("SELECT event_id, title, event_date FROM calendar_events WHERE course_id = %s", (course_id,))
+#         events = cursor.fetchall()
 
-        # Convert fetched data into a list of dictionaries
-        event_list = [{'event_id': event[0], 'title': event[1], 'date': event[2]} for event in events]
+#         # Convert fetched data into a list of dictionaries
+#         event_list = [{'event_id': event[0], 'title': event[1], 'date': event[2]} for event in events]
 
-        cursor.close()
-        cnx.close()
-        return jsonify(event_list)
-    except Exception as e:
-        return make_response({'error': str(e)}, 400)
+#         cursor.close()
+#         cnx.close()
+#         return jsonify(event_list)
+#     except Exception as e:
+#         return make_response({'error': str(e)}, 400)
 
 
 @app.route('/calendar_events/student/<student_id>/date/<date>', methods=['GET'])
@@ -231,16 +238,20 @@ def get_calendar_events_for_student_on_date(student_id, date):
         # SQL to retrieve all events for a particular student on a specific date
         # Assuming 'student_course_registrations' relates students with courses
         cursor.execute("""
-            SELECT ce.event_id, ce.title, ce.event_date
-            FROM calendar_events ce
-            JOIN student_course_registrations scr ON ce.course_id = scr.course_id
-            WHERE scr.student_id = %s AND ce.event_date = %s
+            SELECT ce.CourseID, ce.EventDate, ce.EventDescription
+            FROM CalendarEvents ce
+            JOIN Enrollments en ON ce.CourseID = en.CourseID
+            WHERE en.StudentID = %s AND ce.EventDate = %s
         """, (student_id, date))
 
-        events = cursor.fetchall()
-
-        # Convert fetched data into a list of dictionaries
-        event_list = [{'event_id': event[0], 'title': event[1], 'date': event[2]} for event in events]
+        event_list = []
+        result = cursor.fetchall()
+        for CourseID, EventDate, EventDescription in result:
+            events = {}
+            events['course_id'] = CourseID
+            events['event_date'] = EventDate
+            events['event_description'] = EventDescription
+            event_list.append(events)
 
         cursor.close()
         cnx.close()
@@ -252,105 +263,226 @@ def get_calendar_events_for_student_on_date(student_id, date):
 
 @app.route('/forums/<course_id>', methods=['GET'])
 def get_forums(course_id):
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("SELECT forum_id, title FROM forums WHERE course_id = %s", (course_id,))
-    forums = [{'forum_id': forum[0], 'title': forum[1]} for forum in cursor.fetchall()]
-    cursor.close()
-    cnx.close()
-    return jsonify(forums)
+    try:
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("SELECT ForumID, CourseID, ForumName FROM Forums WHERE CourseID = %s", (course_id,))
+
+        forums_list = []
+        result = cursor.fetchall()
+        for ForumID, CourseID, ForumName in result:
+            forums = {}
+            forums['course_id'] = ForumID
+            forums['event_date'] = CourseID
+            forums['event_description'] = ForumName
+            forums_list.append(forums)
+        cursor.close()
+        cnx.close()
+        return jsonify(forums_list)
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
 
 
 
-@app.route('/forums/<course_id>', methods=['POST'])
-def create_forum(course_id):
-    data = request.get_json()
-    title = data['title']
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("INSERT INTO forums (course_id, title) VALUES (%s, %s)", (course_id, title))
-    cnx.commit()
-    cursor.close()
-    cnx.close()
-    return jsonify({"success": "Forum created"}), 201
+@app.route('/forums', methods=['POST'])
+def create_forum():
+    try:
+        data = request.get_json()
+        forum_id = data['forum_id']
+        course_id = data['course_id']
+        forum_name = data['forum_name']
+
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("INSERT INTO Forums (ForumID, CourseID, ForumName) VALUES (%s, %s, %s)", (forum_id, course_id, forum_name))
+        cnx.commit()
+        cursor.close()
+        cnx.close()
+        return jsonify({"success": "Forum created"}), 201
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
     
 
 
 @app.route('/threads/<forum_id>', methods=['GET'])
 def get_threads(forum_id):
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("SELECT thread_id, title, post FROM discussion_threads WHERE forum_id = %s", (forum_id,))
-    threads = [{'thread_id': thread[0], 'title': thread[1], 'post': thread[2]} for thread in cursor.fetchall()]
-    cursor.close()
-    cnx.close()
-    return jsonify(threads)
+    try:
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("SELECT ThreadID, ForumID, UserID, ThreadTitle, ThreadPost, ParentThreadID FROM DiscussionThreads WHERE ForumID = %s", (forum_id,))
+        threads_list = []
+        result = cursor.fetchall()
+        for ThreadID, ForumID, UserID, ThreadTitle, ThreadPost, ParentThreadID in result:
+            threads = {}
+            threads['thread_id'] = ThreadID
+            threads['forum_id'] = ForumID
+            threads['user_id'] = UserID
+            threads['thread_title'] = ThreadTitle
+            threads['thread_post'] = ThreadPost
+            threads['parent_thread_id'] = ParentThreadID
+            threads_list.append(threads)
 
-@app.route('/threads/<forum_id>', methods=['POST'])
-def add_thread(forum_id):
-    data = request.get_json()
-    title = data['title']
-    post = data['post']
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("INSERT INTO discussion_threads (forum_id, title, post) VALUES (%s, %s, %s)", (forum_id, title, post))
-    cnx.commit()
-    cursor.close()
-    cnx.close()
-    return jsonify({"success": "Thread added"}), 201
+        cursor.close()
+        cnx.close()
+        return jsonify(threads_list)
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
+
+@app.route('/threads', methods=['POST'])
+def add_thread():
+    try:
+        data = request.get_json()
+        thread_id = data['thread_id']
+        forum_id = data['forum_id']
+        user_id = data['user_id']
+        thread_title = data['thread_title']
+        thread_post = data['thread_post']
+        parent_thread_id = data.get('parent_thread_id')
+
+
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("INSERT INTO DiscussionThreads (ThreadID, ForumID, UserID, ThreadTitle, ThreadPost, ParentThreadID) VALUES (%s, %s, %s, %s, %s, %s)", (thread_id, forum_id, user_id, thread_title, thread_post, parent_thread_id))
+        cnx.commit()
+        cursor.close()
+        cnx.close()
+        return jsonify({"success": "Thread added"}), 201
+    
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
 
 
 
-@app.route('/content/<course_id>', methods=['POST'])
-def add_content(course_id):
-    data = request.get_json()
-    content_type = data['type']
-    content = data['content']
-    section = data['section']
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("INSERT INTO course_content (course_id, type, content, section) VALUES (%s, %s, %s, %s)", (course_id, content_type, content, section))
-    cnx.commit()
-    cursor.close()
-    cnx.close()
-    return jsonify({"success": "Content added"}), 201
+@app.route('/content', methods=['POST'])
+def add_content():
+    try:
+        if not request.headers.get('X-User-Type') == 'lecturer':
+            return make_response("Unauthorized", 403)
+
+
+        data = request.get_json()
+        content_id = data['content_id']
+        course_id = data['course_id']
+        lecturer_id = data['lecturer_id']
+        content_type = data['content_type']
+        content_description = data['content_description']
+        section_name = data['section_name']
+
+
+
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("INSERT INTO CourseContent (ContentID, CourseID, LecturerID, ContentType, ContentDescription, SectionName) VALUES (%s, %s, %s, %s, %s, %s)", (content_id, course_id, lecturer_id, content_type, content_description, section_name))
+        cnx.commit()
+        cursor.close()
+        cnx.close()
+        return jsonify({"success": "Content added"}), 201
+    
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
 
 @app.route('/content/<course_id>', methods=['GET'])
 def get_content(course_id):
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("SELECT content_id, type, content, section FROM course_content WHERE course_id = %s", (course_id,))
-    content = [{'content_id': cont[0], 'type': cont[1], 'content': cont[2], 'section': cont[3]} for cont in cursor.fetchall()]
-    cursor.close()
-    cnx.close()
-    return jsonify(content)
+    try:
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("SELECT ContentID, CourseID, LecturerID, ContentType, ContentDescription, SectionName FROM CourseContent WHERE CourseID = %s", (course_id,))
+        content_list = []
+        result = cursor.fetchall()
+        for ThreadID, ForumID, UserID, ThreadTitle, ThreadPost, ParentThreadID in result:
+            content = {}
+            content['thread_id'] = ThreadID
+            content['forum_id'] = ForumID
+            content['user_id'] = UserID
+            content['thread_title'] = ThreadTitle
+            content['thread_post'] = ThreadPost
+            content['parent_thread_id'] = ParentThreadID
+            content_list.append(content)
+        cursor.close()
+        cnx.close()
+        return jsonify(content_list)
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
 
 
-@app.route('/assignments/<course_id>', methods=['POST'])
-def submit_assignment(course_id):
-    data = request.get_json()
-    student_id = data['student_id']
-    assignment = data['assignment']
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("INSERT INTO assignments (course_id, student_id, assignment) VALUES (%s, %s, %s)", (course_id, student_id, assignment))
-    cnx.commit()
-    cursor.close()
-    cnx.close()
-    return jsonify({"success": "Assignment submitted"}), 201
 
-@app.route('/grades/<course_id>', methods=['POST'])
-def grade_assignment(course_id):
-    data = request.get_json()
-    student_id = data['student_id']
-    grade = data['grade']
-    cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
-    cursor = cnx.cursor()
-    cursor.execute("UPDATE assignments SET grade = %s WHERE course_id = %s AND student_id = %s", (grade, course_id, student_id))
-    cnx.commit()
-    cursor.close()
-    cnx.close()
-    return jsonify({"success": "Grade submitted"}), 201
+
+
+@app.route('/assignments', methods=['POST'])
+def submit_assignment():
+    try:
+
+        if not request.headers.get('X-User-Type') == 'student':
+            return make_response("Unauthorized", 403)
+        
+        data = request.get_json()
+
+        assignment_id = data['assignment_id']
+        course_id = data['course_id']
+        student_id = data['student_id']
+        assignment_name = data['assignment_name']
+
+
+
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("INSERT INTO assignments (AssignmentID, CourseID, StudentID, AssignmentName) VALUES (%s, %s, %s, %s)", (assignment_id, course_id, student_id, assignment_name))
+        cnx.commit()
+        cursor.close()
+        cnx.close()
+        return jsonify({"success": "Assignment submitted"}), 201
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
+    
+
+
+
+@app.route('/assignments/grade', methods=['POST'])
+def update_assignment_grade():
+    try:
+
+        if not request.headers.get('X-User-Type') == 'lecturer':
+            return make_response("Unauthorized", 403)
+        
+        data = request.get_json()
+
+        assignment_id = data['assignment_id']
+        course_id = data['course_id']
+        student_id = data['student_id']
+        grade = data['grade']
+
+
+
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("UPDATE Assignments SET Grade = %s WHERE CourseID = %s AND StudentID = %s AND AssignmentID = %s", (grade, course_id, student_id, assignment_id))
+        cnx.commit()
+        cursor.close()
+        cnx.close()
+        return jsonify({"success": "Grade submitted"}), 201
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
+    
+
+
+@app.route('/student/final_Grade/<student_id>', methods=['GET'])
+def get_student_final_grade(student_id):
+    try:
+        cnx = mysql.connector.connect(user='root', password="islandwater", host="localhost", database="OURVLE_CLONE")
+        cursor = cnx.cursor()
+        cursor.execute("SELECT StudentID, AVG(Grade) FROM Assignments WHERE StudentID = %s", (student_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        cnx.close()
+        return jsonify({"student_id":result[0], "final_grade": result[1]})
+    except Exception as e:
+        return make_response({'error': str(e)}, 400)
+    
+
+
+
+    
+
 
 
 
