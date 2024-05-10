@@ -10,8 +10,8 @@
 <body>
     <h1>Courses</h1>
     <ul>
-        {% for course in courses %}
-            <li>{{ course.name }}</li>
+        {% for member in members %}
+        <li>{{ member.id }} {{ member.firstname }} {{ member.lastname }}</li>
         {% endfor %}
     </ul>
 </body>

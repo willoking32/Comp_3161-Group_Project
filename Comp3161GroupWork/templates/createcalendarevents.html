@@ -1,0 +1,31 @@
+{% include "header.html" %}
+{% block main %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Calendar Event</title>
+</head>
+<body>
+    <h1>Create Calendar Event</h1>
+    <form action="/courses/create_event" method="post">
+        <label for="title">Title:</label><br>
+        <input type="text" id="title" name="title" required><br><br>
+
+        <label for="description">Description:</label><br>
+        <textarea id="description" name="description" rows="4" cols="50"></textarea><br><br>
+
+        <label for="start_date">Start Date:</label><br>
+        <input type="datetime-local" id="start_date" name="start_date" required><br><br>
+
+        <label for="end_date">End Date:</label><br>
+        <input type="datetime-local" id="end_date" name="end_date" required><br><br>
+
+        <label for="course_id">Course Code:</label><br>
+        <input type="text" id="course_code" name="course_code" required><br><br>
+
+        <input type="submit" value="Create Event">
+    </form>
+</body>
+</html>
+{% endblock %}

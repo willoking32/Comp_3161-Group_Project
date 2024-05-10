@@ -10,8 +10,8 @@
 <body>
     <h1>Courses</h1>
     <ul>
-        {% for course in courses %}
-            <li>{{ course.coursecode }} {{ course.name }}</li>
+        {% for event in events%}
+            <li>{{ event.coursecode }} {{ event.start_date }} {{ event.end_date }}</li>
         {% endfor %}
     </ul>
 </body>

@@ -42,7 +42,6 @@ def create_courses_table():
 def courseEnrolmentTable():
     conn = connect_to_mysql()
     cursor = conn.cursor()
-    cursor.execute("""DROP TABLE IF EXISTS `course_enrolment`;""")
     cursor.execute('''CREATE TABLE IF NOT EXISTS course_enrolment (
                     student_id VARCHAR(100) NOT NULL,
                     course_title VARCHAR(100) NOT NULL,
@@ -231,6 +230,7 @@ def register_course():
 def course_members():
     global Cur_User
     if request.method == 'POST':
+
         if 'user_id' not in session:
             return redirect('/login')
 
@@ -240,9 +240,9 @@ def course_members():
 
         conn = connect_to_mysql()
         cursor = conn.cursor(dictionary=True)
-        course_code=request.form.get('course_code')
+        course_code=request.form.get('course_ID')
         # Get course details
-        cursor.execute("SELECT * FROM courses WHERE coursecode = %s", (course_code,))
+        cursor.execute("""SELECT * FROM courses WHERE coursecode = %s""", (course_code,))
         course = cursor.fetchone()
 
         if not course:
@@ -250,14 +250,80 @@ def course_members():
             return render_template('error.html', error='Course not found')
 
         # Get members of the course
-        cursor.execute("SELECT users.id, users.firstname, users.lastname, users.gender, users.type FROM users JOIN course_enrollment ON users.id = course_enrollment.student_id WHERE course_enrollment.coursecode = %s", (course_code,))
+        sql_query = """SELECT users.id, users.firstname, users.lastname 
+        FROM users JOIN course_enrolment ON users.id = course_enrolment.student_id 
+        WHERE course_enrolment.coursecode = %s"""
+        cursor.execute(sql_query, (course_code,))
+
         members = cursor.fetchall()
 
         conn.close()
 
-        return render_template('course_members.html', course=course, members=members, Cur_User=Cur_User)
+        return render_template('course_members.html',  members=members, Cur_User=Cur_User)
     else:
         return render_template('getcourse.html', Cur_User=Cur_User)
+
+@app.route('/courses/create_event', methods=['POST','GET'])
+def create_event():
+    if request.method=='POST':
+
+        if 'user_id' not in session:
+            return redirect('/login')
+
+        # Check if the user is authorized to create events
+        if session.get('type') not in ['Lecturer', 'Admin']:
+            return render_template('error.html', error='Unauthorized', Cur_User=Cur_User)
+
+        # Retrieve form data
+        title = request.form.get('title')
+        description = request.form.get('description')
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        course_id = request.form.get('course_code')
+
+        # Validate input data
+        if not (title and start_date and end_date and course_id):
+            return render_template('error.html', error='Missing required fields', Cur_User=Cur_User)
+
+        # Insert event into the database
+        conn = connect_to_mysql()
+        cursor = conn.cursor()
+        cursor.execute('DROP TABLE IF EXISTS `calendar_events`;')
+        cursor.execute("""CREATE TABLE IF NOT EXISTS calendar_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    coursecode VARCHAR(21),
+    FOREIGN KEY (coursecode) REFERENCES courses(id)
+);""")
+        try:
+            cursor.execute("INSERT INTO calendar_events (title, description, start_date, end_date, course_id) VALUES (%s, %s, %s, %s, %s)",
+                        (title, description, start_date, end_date, course_id))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            return render_template('error.html', error='Failed to create event: {}'.format(str(e)), Cur_User=Cur_User)
+        finally:
+            conn.close()
+
+        return render_template('success.html', message='Event created successfully', Cur_User=Cur_User)
+    else:
+        return render_template('createcalendarevents.html', Cur_User=Cur_User)
+
+@app.route('/courses/get_events', methods=['GET','POST'])
+def get_events():
+    global Cur_User
+    if request.method == 'POST':
+        coursecode = request.form.get('course_id')
+        conn = connect_to_mysql()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM calendar_events WHERE course_id = %s;', (coursecode,))
+        events = cursor.fetchall()
+        conn.close()
+        return render_template('events.html', events=events, Cur_User=Cur_User)
+    return render_template('getevent.html', Cur_User=Cur_User)
 
 if __name__ == '__main__':
     create_users_table()
