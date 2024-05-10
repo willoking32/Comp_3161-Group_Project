@@ -78,3 +78,50 @@ CREATE TABLE OURVLE_CLONE.Assignments (
     FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
     FOREIGN KEY (StudentID) REFERENCES Users(UserID)
 );
+
+
+
+
+
+
+
+
+
+-- CREATE VIEW CoursesWith50PlusStudents AS
+-- SELECT c.CourseID, c.CourseName, COUNT(e.StudentID) AS StudentCount
+-- FROM Courses c
+-- JOIN Enrollments e ON c.CourseID = e.CourseID
+-- GROUP BY c.CourseID, c.CourseName
+-- HAVING COUNT(e.StudentID) >= 50;
+
+
+
+-- CREATE VIEW StudentsIn5PlusCourses AS
+-- SELECT e.StudentID, COUNT(e.CourseID) AS CourseCount
+-- FROM Enrollments e
+-- GROUP BY e.StudentID
+-- HAVING COUNT(e.CourseID) >= 5;
+
+
+-- CREATE VIEW LecturersTeaching3PlusCourses AS
+-- SELECT u.UserID, u.FirstName, u.LastName, COUNT(c.CourseID) AS CourseCount
+-- FROM Users u
+-- JOIN Courses c ON u.UserID = c.LecturerID
+-- GROUP BY u.UserID, u.FirstName, u.LastName
+-- HAVING COUNT(c.CourseID) >= 3;
+
+
+-- CREATE VIEW Top10EnrolledCourses AS
+-- SELECT c.CourseID, c.CourseName, COUNT(e.StudentID) AS EnrollmentCount
+-- FROM Courses c
+-- JOIN Enrollments e ON c.CourseID = e.CourseID
+-- GROUP BY c.CourseID, c.CourseName
+-- ORDER BY COUNT(e.StudentID) DESC
+-- LIMIT 10;
+
+-- CREATE VIEW Top10StudentsWithHighestAverages AS
+-- SELECT g.StudentID, AVG(g.Grade) AS AverageGrade
+-- FROM Assignment g
+-- GROUP BY g.StudentID
+-- ORDER BY AVG(g.Grade) DESC
+-- LIMIT 10;
