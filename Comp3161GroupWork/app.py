@@ -39,14 +39,14 @@ def create_courses_table():
     conn.commit()
     conn.close()
 
-def courseEnrollmentTable():
+def courseEnrolmentTable():
     conn = connect_to_mysql()
     cursor = conn.cursor()
     cursor.execute("""DROP TABLE IF EXISTS `course_enrolment`;""")
     cursor.execute('''CREATE TABLE IF NOT EXISTS course_enrolment (
+                    student_id VARCHAR(100) NOT NULL,
                     course_title VARCHAR(100) NOT NULL,
                     coursecode VARCHAR(21) PRIMARY KEY ,
-                    id INTEGER NOT NULL,
                     FOREIGN KEY (coursecode) REFERENCES users(id));''')
     conn.commit()
     conn.close()
@@ -159,7 +159,7 @@ def student_courses(student_id):
     global Cur_User
     conn = connect_to_mysql()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT courses.* FROM courses INNER JOIN course_enrolment ON courses.coursecode = course_enrolment.coursecode WHERE course_enrolment.id = %s", (student_id,))
+    cursor.execute("SELECT courses.* FROM courses INNER JOIN course_enrolment ON courses.coursecode = course_enrolment.coursecode WHERE course_enrolment.student_id = %s", (student_id,))
     courses = cursor.fetchall()
     conn.close()
     return render_template('courses.html', courses=courses, Cur_User=Cur_User)
@@ -177,51 +177,53 @@ def lecturer_courses(lecturer_id):
 @app.route('/courses/register', methods=['GET','POST'])
 def register_course():
     global Cur_User
-    
-    # Check if user is logged in
-    if 'user_id' not in session:
-        return render_template('error.html', error='Unauthorized'), 401
+    if request.method=='POST':
+        # Check if user is logged in
+        if 'user_id' not in session:
+            return render_template('error.html', error='Unauthorized', Cur_User=Cur_User), 401
 
-    # Check if user is a student
-    if session.get('type') != 'Student':
-        return render_template('error.html', error='Only students can register for courses'), 403
+        # Check if user is a student
+        if session.get('type') != 'Student':
+            return render_template('error.html', error='Only students can register for courses', Cur_User=Cur_User), 403
 
-    # Get courseId from request body
-    course_id = request.form.get('courseId')
+        # Get courseId from request body
+        course_id = request.form.get('courseId')
+        course_title=request.form.get('courseTitle')
+        # Check if courseId is provided
+        if not course_id:
+            return render_template('error.html', error='Course ID is required', Cur_User=Cur_User), 400
 
-    # Check if courseId is provided
-    if not course_id:
-        return render_template('error.html', error='Course ID is required'), 400
-
-    # Check if the course exists
-    conn = connect_to_mysql()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM courses WHERE coursecode = %s", (course_id,))
-    course = cursor.fetchone()
-    conn.close()
-
-    if not course:
-        return render_template('error.html', error='Course not found'), 404
-
-    # Register student for the course
-    student_id = session['user_id']
-    conn = connect_to_mysql()
-    cursor = conn.cursor()
-
-    # Check if the student is already registered for the course
-    cursor.execute("SELECT * FROM course_enrollment WHERE student_id = %s AND coursecode = %s", (student_id, course_id))
-    if cursor.fetchone():
+        # Check if the course exists
+        conn = connect_to_mysql()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM courses WHERE coursecode = %s", (course_id,))
+        course = cursor.fetchone()
         conn.close()
-        return render_template('error.html', error='Student is already registered for this course'), 400
 
-    cursor.execute("INSERT INTO course_enrollment (student_id, coursecode) VALUES (%s, %s)", (student_id, course_id))
-    conn.commit()
-    conn.close()
+        if not course:
+            return render_template('error.html', error='Course not found', Cur_User=Cur_User), 404
 
-    return render_template('success.html', message='Student registered successfully')
+        # Register student for the course
+        student_id = session['user_id']
+        conn = connect_to_mysql()
+        cursor = conn.cursor()
+
+        # Check if the student is already registered for the course
+        cursor.execute("SELECT * FROM course_enrolment WHERE student_id = %s AND coursecode = %s", (student_id, course_id))
+        if cursor.fetchone():
+            conn.close()
+            return render_template('error.html', error='Student is already registered for this course', Cur_User=Cur_User), 400
+
+        cursor.execute("INSERT INTO course_enrolment (student_id,course_title, coursecode) VALUES (%s, %s,%s)", (student_id,course_title, course_id))
+        conn.commit()
+        conn.close()
+
+        return render_template('success.html', message='Student registered successfully', Cur_User=Cur_User)
+    else:
+        return render_template('register_course.html', Cur_User=Cur_User)
 
 if __name__ == '__main__':
     create_users_table()
     create_courses_table()
-    courseEnrollmentTable()
+    courseEnrolmentTable()
     app.run(debug=True)
