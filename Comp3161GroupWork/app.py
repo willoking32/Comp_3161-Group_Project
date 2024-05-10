@@ -107,7 +107,12 @@ def login():
             session['user_id'] = user[0]
             session['type'] = user[1]
             Cur_User = [user_id, user[1]]  # Update Cur_User
-            return redirect('/courses')    
+            if user[1]=="Admin":
+                return redirect('/courses')
+            elif user[1] == "Lecturer":
+                return redirect(f'/courses/student/{user[0]}')
+            elif user[1]== "Student":
+                return redirect(f'/courses/lecturer/{user[0]}')    
         else:
             return render_template('login.html', error='Invalid ID or password')
     else:
@@ -221,6 +226,38 @@ def register_course():
         return render_template('success.html', message='Student registered successfully', Cur_User=Cur_User)
     else:
         return render_template('register_course.html', Cur_User=Cur_User)
+
+@app.route('/courses/<course_code>/members', methods=['GET', 'POST'])
+def course_members(course_code):
+    global Cur_User
+    if request.method == 'POST':
+        if 'user_id' not in session:
+            return redirect('/login')
+
+        # Check if the user is authorized to view members
+        if session.get('type') not in ['Lecturer', 'Admin']:
+            return render_template('error.html', error='Unauthorized')
+
+        conn = connect_to_mysql()
+        cursor = conn.cursor(dictionary=True)
+
+        # Get course details
+        cursor.execute("SELECT * FROM courses WHERE coursecode = %s", (course_code,))
+        course = cursor.fetchone()
+
+        if not course:
+            conn.close()
+            return render_template('error.html', error='Course not found')
+
+        # Get members of the course
+        cursor.execute("SELECT users.id, users.firstname, users.lastname, users.gender, users.type FROM users JOIN course_enrollment ON users.id = course_enrollment.student_id WHERE course_enrollment.coursecode = %s", (course_code,))
+        members = cursor.fetchall()
+
+        conn.close()
+
+        return render_template('course_members.html', course=course, members=members, Cur_User=Cur_User)
+    else:
+        return render_template('getcourse.html', Cur_User=Cur_User)
 
 if __name__ == '__main__':
     create_users_table()
