@@ -4,12 +4,8 @@ import mysql.connector
 
 fake = Faker()
 
-connection = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="DoveLove",
-    database="OURVLE_CLONE"
-)
+connection = mysql.connector.connect(user='root', password="islandwater", host="localhost" , database="OURVLE_CLONE")
+
 
 def execute_query(query, values=None):
     cursor = connection.cursor()
@@ -20,15 +16,19 @@ def execute_query(query, values=None):
     connection.commit()
     cursor.close()
 
-def generate_users(num_users):
+def generate_users(num_users, num_lecturers):
     users = []
+    lecturer_ids = random.sample(range(1, num_users + 1), num_lecturers)
     for i in range(num_users):
+        user_type = 'student'
+        if i + 1 in lecturer_ids:
+            user_type = 'lecturer'
         user = {
             'UserID': i + 1,
             'FirstName': fake.first_name(),
             'LastName': fake.last_name(),
             'Password': fake.password(),
-            'UserType': random.choice(['admin', 'lecturer', 'student'])
+            'UserType': user_type
         }
         users.append(user)
     return users
@@ -130,7 +130,7 @@ num_content = 500
 num_assignments = 1000
 num_enrollments = 50000
 
-users = generate_users(num_users)
+users = generate_users(num_users, num_lecturers)
 courses = generate_courses(num_courses, num_lecturers)
 enrollments = generate_enrollments(num_enrollments, num_students, num_courses)
 calendar_events = generate_calendar_events(num_events, num_courses)
@@ -172,7 +172,7 @@ for thread in discussion_threads:
 for content_item in course_content:
     query = "INSERT INTO CourseContent (ContentID, CourseID, LecturerID, ContentType, ContentDescription, SectionName) VALUES (%s, %s, %s, %s, %s, %s)"
     values = (content_item['ContentID'], content_item['CourseID'], content_item['LecturerID'], content_item['ContentType'], content_item['ContentDescription'], content_item['ContentDescription'], content_item['SectionName'])
-    execute_query(query, values)
+    execute_query(query, values) 
     
 
 for assignment in assignments:
