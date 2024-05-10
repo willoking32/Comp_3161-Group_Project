@@ -50,8 +50,8 @@ def generate_users(num_users, num_lecturers):
         students = generate_students(num_users)
         lecturers = generate_lecturers(num_lecturers)
 
-
-        users = students + lecturers
+        users.extend(students)
+        users.extend(lecturers)
 
         return users
     except Exception as e:
@@ -142,7 +142,7 @@ def generate_threads(num_threads, num_forums, num_users):
             'UserID': random.randint(1, num_users),
             'ThreadTitle': fake.sentence(),
             'ThreadPost': fake.text(),
-            'ParentThreadID': None  # Assuming no parent thread for initial threads
+            'ParentThreadID': None  
         }
         threads.append(thread)
     return threads
@@ -230,7 +230,7 @@ for thread in discussion_threads:
 
 for content_item in course_content:
     query = "INSERT INTO CourseContent (ContentID, CourseID, LecturerID, ContentType, ContentDescription, SectionName) VALUES (%s, %s, %s, %s, %s, %s)"
-    values = (content_item['ContentID'], content_item['CourseID'], content_item['LecturerID'], content_item['ContentType'], content_item['ContentDescription'], content_item['ContentDescription'], content_item['SectionName'])
+    values = (content_item['ContentID'], content_item['CourseID'], content_item['LecturerID'], content_item['ContentType'], content_item['ContentDescription'], content_item['SectionName'])
     execute_query(query, values) 
     
 
