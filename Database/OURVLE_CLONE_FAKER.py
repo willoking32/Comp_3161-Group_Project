@@ -49,8 +49,8 @@ def generate_users(num_users, num_lecturers):
         students = generate_students(num_users - num_lecturers)
         lecturers = generate_lecturers(num_lecturers)
 
-
-        users = students + lecturers
+        users.extend(students)
+        users.extend(lecturers)
 
         return users
     except Exception as e:
@@ -110,7 +110,7 @@ def generate_threads(num_threads, num_forums, num_users):
             'UserID': random.randint(1, num_users),
             'ThreadTitle': fake.sentence(),
             'ThreadPost': fake.text(),
-            'ParentThreadID': None  # Assuming no parent thread for initial threads
+            'ParentThreadID': None  
         }
         threads.append(thread)
     return threads
