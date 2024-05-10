@@ -227,8 +227,8 @@ def register_course():
     else:
         return render_template('register_course.html', Cur_User=Cur_User)
 
-@app.route('/courses/<course_code>/members', methods=['GET', 'POST'])
-def course_members(course_code):
+@app.route('/courses/members', methods=['GET', 'POST'])
+def course_members():
     global Cur_User
     if request.method == 'POST':
         if 'user_id' not in session:
@@ -240,7 +240,7 @@ def course_members(course_code):
 
         conn = connect_to_mysql()
         cursor = conn.cursor(dictionary=True)
-
+        course_code=request.form.get('course_code')
         # Get course details
         cursor.execute("SELECT * FROM courses WHERE coursecode = %s", (course_code,))
         course = cursor.fetchone()
