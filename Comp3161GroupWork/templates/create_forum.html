@@ -1,0 +1,25 @@
+{% include "header.html" %}
+{% block main %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Forum</title>
+</head>
+<body>
+    <h1>Create Forum</h1>
+    <form action="/courses/forums/create" method="post">
+        <input type="hidden" name="course_id" value="{{ course_id }}">
+        <label for="title">Title:</label><br>
+        <input type="text" id="title" name="title" required><br><br>
+        <label for="course_ID">Course Code:</label><br>
+        <input type="text" id="course_ID" name="course_ID"><br><br>
+        <label for="description">Description:</label><br>
+        <textarea id="description" name="description" rows="4" cols="50"></textarea><br><br>
+
+        <input type="submit" value="Create Forum">
+    </form>
+</body>
+</html>
+{%endblock%}

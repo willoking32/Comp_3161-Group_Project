@@ -242,7 +242,7 @@ def course_members():
         cursor = conn.cursor(dictionary=True)
         course_code=request.form.get('course_ID')
         # Get course details
-        cursor.execute("""SELECT * FROM courses WHERE coursecode = %s""", (course_code,))
+        cursor.execute("SELECT * FROM courses WHERE coursecode = %s", (course_code,))
         course = cursor.fetchone()
 
         if not course:
@@ -250,10 +250,11 @@ def course_members():
             return render_template('error.html', error='Course not found')
 
         # Get members of the course
-        sql_query = """SELECT users.id, users.firstname, users.lastname 
-        FROM users JOIN course_enrolment ON users.id = course_enrolment.student_id 
-        WHERE course_enrolment.coursecode = %s"""
-        cursor.execute(sql_query, (course_code,))
+       
+        cursor.execute("""SELECT users.id, users.firstname, users.lastname 
+                  FROM users 
+                  JOIN course_enrolment ON users.id = course_enrolment.student_id 
+                  WHERE course_enrolment.coursecode = %s""", (course_code,))
 
         members = cursor.fetchall()
 
@@ -345,6 +346,58 @@ def addcourse():
     except Exception as e:
         print (e)
 
+@app.route('/courses/forums/', methods=['GET','POST'])
+def get_course_forums():
+    global Cur_User
+    if request.method=='POST':
+        coursecode=request.form.get('course_ID')
+        conn = connect_to_mysql()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM forums WHERE coursecode = %s", (coursecode,))
+        forums = cursor.fetchall()
+        conn.close()
+        return render_template('course_forums.html', forums=forums,Cur_User=Cur_User)
+    return render_template('getevent.html', Cur_User=Cur_User)
+
+@app.route('/courses/forums/create', methods=['POST','GET'])
+def create_forum():
+    if request.method=='POST':
+
+        if 'user_id' not in session:
+            return redirect('/login')
+        
+        # Assuming the user is authorized to create a forum, e.g., lecturer or admin
+        if session.get('type') not in ['Lecturer', 'Admin']:
+            return render_template('error.html', error='Unauthorized')
+
+        coursecode = request.form.get('course_ID')
+        title = request.form.get('title')
+        description = request.form.get('description')
+
+        conn = connect_to_mysql()
+        cursor = conn.cursor()
+        query="""CREATE TABLE IF NOT EXISTS forums (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    coursecode VARCHAR(255),
+    FOREIGN KEY (coursecode) REFERENCES courses(coursecode)
+);"""
+        cursor.execute(query)
+        conn.commit()
+        try:
+            cursor.execute("INSERT INTO forums (title, description, coursecode) VALUES (%s, %s, %s)",
+                        (title, description, coursecode))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            return render_template('error.html', error='Failed to create forum: {}'.format(str(e)))
+        finally:
+            conn.close()
+
+        return render_template('success.html', message='Forum created successfully', Cur_User=Cur_User)
+    else:
+        return render_template('create_forum.html', Cur_User=Cur_User)
 if __name__ == '__main__':
     create_users_table()
     create_courses_table()

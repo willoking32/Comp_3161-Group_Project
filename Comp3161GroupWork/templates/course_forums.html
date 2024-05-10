@@ -1,0 +1,19 @@
+{% include "header.html" %}
+{% block main %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Forums</title>
+</head>
+<body>
+    <h1>Course Forums</h1>
+    <ul>
+        {% for forum in forums %}
+            <li><a href="/forums/{{ forum.id }}">{{ forum.title }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+{% endblock%}
