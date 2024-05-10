@@ -1,9 +1,10 @@
-    CREATE DATABASE OURVLE_CLONE;
+CREATE DATABASE OURVLE_CLONE;
 
     -- Users table
 CREATE TABLE OURVLE_CLONE.Users (
     UserID INT PRIMARY KEY,
-    Username VARCHAR(50) UNIQUE,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
     Password VARCHAR(50),
     UserType ENUM('admin', 'lecturer', 'student')
 );
