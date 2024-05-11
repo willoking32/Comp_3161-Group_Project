@@ -326,6 +326,32 @@ def get_events():
         return render_template('events.html', events=events, Cur_User=Cur_User)
     return render_template('getevent.html', Cur_User=Cur_User)
 
+@app.route('/students/events', methods=['GET','POST'])
+def get_student_events():
+    student_id = request.form.get('student_ID') 
+    date = request.form.get('date')
+
+    if request.method=='POST':
+        if not date:
+            return render_template('error.html', error='Date parameter is required',Cur_User=Cur_User)
+
+        conn = connect_to_mysql()
+        cursor = conn.cursor(dictionary=True)
+
+        try:
+            cursor.execute("""SELECT *
+                        FROM calendar_events 
+                        JOIN course_enrolment ON calendar_events.coursecode = course_enrolment.coursecode
+                        WHERE course_enrolment.student_id = %s
+                        AND DATE(calendar_events.start_date) = %s""",
+                       (student_id, date))
+            events = cursor.fetchall()
+        except Exception as e:
+            return render_template('error.html', error='Failed to retrieve events: {}'.format(str(e)),Cur_User=Cur_User)
+        finally:
+            conn.close()
+        return render_template('events.html', events=events,Cur_User=Cur_User)
+    return render_template("studentevent.html",Cur_User=Cur_User)
 
 @app.route('/addcoursecontent', methods=['POST'])
 def addcourse():
@@ -357,10 +383,11 @@ def get_course_forums():
         forums = cursor.fetchall()
         conn.close()
         return render_template('course_forums.html', forums=forums,Cur_User=Cur_User)
-    return render_template('getevent.html', Cur_User=Cur_User)
+    return render_template('getcourse.html', Cur_User=Cur_User)
 
 @app.route('/courses/forums/create', methods=['POST','GET'])
 def create_forum():
+
     if request.method=='POST':
 
         if 'user_id' not in session:
@@ -398,6 +425,7 @@ def create_forum():
         return render_template('success.html', message='Forum created successfully', Cur_User=Cur_User)
     else:
         return render_template('create_forum.html', Cur_User=Cur_User)
+
 if __name__ == '__main__':
     create_users_table()
     create_courses_table()

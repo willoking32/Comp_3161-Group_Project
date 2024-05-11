@@ -11,7 +11,7 @@
     <h1>Events</h1>
     <ul>
         {% for event in events%}
-            <li>{{ event.coursecode }} {{ event.start_date }} {{ event.end_date }}</li>
+            <li>{{event.title}} {{ event.start_date }} {{ event.end_date }}</li>
         {% endfor %}
     </ul>
 </body>
