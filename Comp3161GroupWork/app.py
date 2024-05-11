@@ -236,7 +236,7 @@ def course_members():
 
         # Check if the user is authorized to view members
         if session.get('type') not in ['Lecturer', 'Admin']:
-            return render_template('error.html', error='Unauthorized')
+            return render_template('error.html', error='Unauthorized',Cur_User=Cur_User)
 
         conn = connect_to_mysql()
         cursor = conn.cursor(dictionary=True)
@@ -247,7 +247,7 @@ def course_members():
 
         if not course:
             conn.close()
-            return render_template('error.html', error='Course not found')
+            return render_template('error.html', error='Course not found',Cur_User=Cur_User)
 
         # Get members of the course
        
@@ -370,7 +370,7 @@ def create_forum():
         if session.get('type') not in ['Lecturer', 'Admin']:
             return render_template('error.html', error='Unauthorized')
 
-        coursecode = request.form.get('course_ID')
+        coursecode = request.form.get('course_id')
         title = request.form.get('title')
         description = request.form.get('description')
 
